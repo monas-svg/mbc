@@ -15,3 +15,7 @@ htmlcov/
 .idea/
 .vscode/
 *.log
+.terraform/
+.terraform.*
+*.tfstate
+*.tfstate.*
