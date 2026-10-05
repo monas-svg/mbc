@@ -1,0 +1,144 @@
+name: Terraform CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  terraform:
+    name: Terraform Plan
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          allow-no-subscriptions: true
+
+      - name: Configure Terraform backend (get storage key)
+        if: ${{ secrets.TF_BACKEND_STORAGE_ACCOUNT && secrets.TF_BACKEND_RG && secrets.TF_BACKEND_CONTAINER }}
+        run: |
+          echo "Fetching storage account key for backend..."
+          KEY=$(az storage account keys list -g "${{ secrets.TF_BACKEND_RG }}" -n "${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}" --query "[0].value" -o tsv)
+          echo "TF_BACKEND_ACCESS_KEY=$KEY" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.7.0
+
+      - name: Terraform Init
+        working-directory: infra/terraform/environments/dev
+        env:
+          TF_BACKEND_RG: ${{ secrets.TF_BACKEND_RG }}
+          TF_BACKEND_STORAGE_ACCOUNT: ${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}
+          TF_BACKEND_CONTAINER: ${{ secrets.TF_BACKEND_CONTAINER }}
+          TF_BACKEND_KEY: ${{ secrets.TF_BACKEND_KEY }}
+          TF_BACKEND_ACCESS_KEY: ${{ env.TF_BACKEND_ACCESS_KEY }}
+        run: |
+          echo "Initializing Terraform with remote backend (azurerm)..."
+          if [ -n "${TF_BACKEND_STORAGE_ACCOUNT}" ]; then
+            terraform init -input=false \
+              -backend-config="resource_group_name=${TF_BACKEND_RG}" \
+              -backend-config="storage_account_name=${TF_BACKEND_STORAGE_ACCOUNT}" \
+              -backend-config="container_name=${TF_BACKEND_CONTAINER}" \
+              -backend-config="key=${TF_BACKEND_KEY:-dev.tfstate}" \
+              -backend-config="access_key=${TF_BACKEND_ACCESS_KEY}"
+          else
+            terraform init -input=false
+          fi
+
+      - name: Terraform Validate
+        working-directory: infra/terraform/environments/dev
+        run: |
+          terraform validate
+
+      - name: Terraform Plan
+        working-directory: infra/terraform/environments/dev
+        env:
+          TF_VAR_admin_password: ${{ secrets.TF_VAR_ADMIN_PASSWORD }}
+        run: |
+          terraform plan -input=false -out=tfplan
+          terraform show -no-color tfplan
+
+      - name: Upload plan artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-plan-dev
+          path: infra/terraform/environments/dev/tfplan
+
+  terraform-apply:
+    name: Terraform Apply (Protected)
+    runs-on: ubuntu-latest
+    needs: terraform
+    # This job requires environment protection/approval in GitHub (set environment 'dev')
+    environment: dev
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure (OIDC)
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          allow-no-subscriptions: true
+
+      - name: Download plan artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: terraform-plan-dev
+          path: infra/terraform/environments/dev
+
+      - name: Fetch storage account key (if backend configured)
+        if: ${{ secrets.TF_BACKEND_STORAGE_ACCOUNT && secrets.TF_BACKEND_RG && secrets.TF_BACKEND_CONTAINER }}
+        run: |
+          echo "Fetching storage account key for backend..."
+          KEY=$(az storage account keys list -g "${{ secrets.TF_BACKEND_RG }}" -n "${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}" --query "[0].value" -o tsv)
+          echo "TF_BACKEND_ACCESS_KEY=$KEY" >> $GITHUB_ENV
+        shell: bash
+
+      - name: Terraform Apply
+        working-directory: infra/terraform/environments/dev
+        env:
+          TF_BACKEND_RG: ${{ secrets.TF_BACKEND_RG }}
+          TF_BACKEND_STORAGE_ACCOUNT: ${{ secrets.TF_BACKEND_STORAGE_ACCOUNT }}
+          TF_BACKEND_CONTAINER: ${{ secrets.TF_BACKEND_CONTAINER }}
+          TF_BACKEND_KEY: ${{ secrets.TF_BACKEND_KEY }}
+          TF_BACKEND_ACCESS_KEY: ${{ env.TF_BACKEND_ACCESS_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -n "${TF_BACKEND_STORAGE_ACCOUNT:-}" ]; then
+            terraform init -reconfigure -input=false \
+              -backend-config="resource_group_name=${TF_BACKEND_RG}" \
+              -backend-config="storage_account_name=${TF_BACKEND_STORAGE_ACCOUNT}" \
+              -backend-config="container_name=${TF_BACKEND_CONTAINER}" \
+              -backend-config="key=${TF_BACKEND_KEY:-dev.tfstate}" \
+              -backend-config="access_key=${TF_BACKEND_ACCESS_KEY}"
+          else
+            terraform init -reconfigure -input=false
+          fi
+          terraform apply -input=false infra/terraform/environments/dev/tfplan
+        shell: bash
+
+# Notes:
+# - Configure repository secrets: AZURE_CLIENT_ID, AZURE_TENANT_ID, AZURE_SUBSCRIPTION_ID, TF_VAR_ADMIN_PASSWORD
+# - For remote state, add backend configuration to the environment and expose storage/access secrets.

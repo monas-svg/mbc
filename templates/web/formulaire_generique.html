@@ -1,0 +1,30 @@
+{% extends "web/base.html" %}
+{% block contenu %}
+<div class="mb-page-header">
+  <div>
+    <h1>{{ titre_page }}</h1>
+    {% if sous_titre %}<p>{{ sous_titre }}</p>{% endif %}
+  </div>
+</div>
+
+<div class="mb-card" style="max-width:680px;">
+  <form method="post" enctype="multipart/form-data" class="mb-form">
+    {% csrf_token %}
+    {% if form.non_field_errors %}
+      {% for erreur in form.non_field_errors %}<div class="mb-message error">{{ erreur }}</div>{% endfor %}
+    {% endif %}
+    {% for field in form %}
+    <div class="form-group">
+      <label for="{{ field.id_for_label }}">{{ field.label }}{% if field.field.required %} *{% endif %}</label>
+      {{ field }}
+      {% if field.help_text %}<span class="form-hint">{{ field.help_text }}</span>{% endif %}
+      {% if field.errors %}<span class="form-error">{{ field.errors.0 }}</span>{% endif %}
+    </div>
+    {% endfor %}
+    <div class="mb-form-actions">
+      <button type="submit" class="btn btn-primary">Enregistrer</button>
+      <a href="{{ retour_url|default:'javascript:history.back()' }}" class="btn btn-outline">Annuler</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

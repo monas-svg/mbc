@@ -1,0 +1,35 @@
+{% extends "web/base.html" %}
+{% block contenu %}
+<div class="mb-page-header">
+  <div>
+    <h1>Charges fixes</h1>
+    <p>Charges récurrentes et prévisibles, générées automatiquement en dépense chaque mois.</p>
+  </div>
+  <div class="mb-actions">
+    <a href="{% url 'web:depenses_liste' %}" class="btn btn-outline">Retour</a>
+    <a href="{% url 'web:charge_fixe_creer' %}" class="btn btn-primary">{% include "web/icons/plus.svg" %} Nouvelle charge fixe</a>
+  </div>
+</div>
+
+<div class="mb-card">
+  <div class="mb-table-wrap">
+  <table class="mb-table">
+    <thead><tr><th>Libellé</th><th>Catégorie</th><th>Montant</th><th>Prélèvement</th><th>Mode</th><th>Statut</th></tr></thead>
+    <tbody>
+      {% for c in charges %}
+      <tr>
+        <td class="cell-strong">{{ c.libelle }}</td>
+        <td><span class="tag">{{ c.get_categorie_display }}</span></td>
+        <td class="mb-mono">{{ c.montant|floatformat:0 }} {{ devise }}</td>
+        <td class="cell-muted">Le {{ c.jour_prelevement }} du mois</td>
+        <td class="cell-muted">{{ c.get_mode_paiement_display }}</td>
+        <td>{% if c.actif %}<span class="badge badge-success">Active</span>{% else %}<span class="badge badge-neutral">Inactive</span>{% endif %}</td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6"><div class="mb-empty">Aucune charge fixe configurée.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

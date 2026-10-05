@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mbcode-web
+  namespace: mbcode
+  labels:
+    app.kubernetes.io/name: mbcode
+    app.kubernetes.io/component: web
+    app.kubernetes.io/part-of: mbcode
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: mbcode
+      app.kubernetes.io/component: web
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mbcode
+        app.kubernetes.io/component: web
+        app.kubernetes.io/part-of: mbcode
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: mbcode
+          image: mbcodeprodacr.azurecr.io/mbcode:latest
+          imagePullPolicy: Always
+          ports:
+            - name: http
+              containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: mbcode-config
+            - secretRef:
+                name: mbcode-app-secrets
+          env:
+            - name: PORT
+              value: "8000"
+            - name: PYTHONDONTWRITEBYTECODE
+              value: "1"
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - ALL
+          readinessProbe:
+            httpGet:
+              path: /connexion/
+              port: http
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            timeoutSeconds: 3
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /connexion/
+              port: http
+            initialDelaySeconds: 40
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: media
+              mountPath: /app/media
+            - name: staticfiles
+              mountPath: /app/staticfiles
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: media
+          emptyDir: {}
+        - name: staticfiles
+          emptyDir: {}

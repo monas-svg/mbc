@@ -1,0 +1,100 @@
+{% extends "web/base.html" %}
+{% block contenu %}
+<div class="mb-page-header">
+  <div>
+    <h1>Aperçu {{ nom_entreprise }}</h1>
+    <p>Performances et activités récentes de votre centre.</p>
+  </div>
+  <div class="mb-actions">
+    <a href="{% url 'web:depenses_liste' %}" class="btn btn-outline">{% include "web/icons/wallet.svg" %} Enregistrer dépense</a>
+    <a href="{% url 'web:reservation_creer' %}" class="btn btn-outline">{% include "web/icons/building.svg" %} Réserver espace</a>
+    <a href="{% url 'web:enfant_creer_rapide' %}" class="btn btn-outline">{% include "web/icons/cap.svg" %} Ajouter un enfant</a>
+    <a href="{% url 'web:vente_creer' %}" class="btn btn-primary">{% include "web/icons/plus.svg" %} Nouvelle vente</a>
+  </div>
+</div>
+
+<div class="mb-grid-4">
+  <div class="mb-card stat-card">
+    <div class="stat-card-top">
+      <span class="stat-label">Chiffre d'affaires</span>
+      <span class="stat-icon">{% include "web/icons/invoice.svg" %}</span>
+    </div>
+    <span class="stat-value">{{ chiffre_affaires|floatformat:0 }} {{ devise }}</span>
+    <span class="stat-foot">
+      {% if variation_ca is not None %}
+        {% if variation_ca >= 0 %}<span class="up">{% include "web/icons/up.svg" %} +{{ variation_ca }}%</span>{% else %}<span class="down">{% include "web/icons/down.svg" %} {{ variation_ca }}%</span>{% endif %}
+        vs. mois dernier
+      {% else %}Premier mois d'activité suivi{% endif %}
+    </span>
+  </div>
+
+  <div class="mb-card stat-card">
+    <div class="stat-card-top">
+      <span class="stat-label">Élèves actifs</span>
+      <span class="stat-icon">{% include "web/icons/cap.svg" %}</span>
+    </div>
+    <span class="stat-value">{{ eleves_actifs }}</span>
+    <span class="stat-foot"><span class="up">{% include "web/icons/up.svg" %} +{{ nouveaux_eleves_semaine }}</span> cette semaine</span>
+  </div>
+
+  <div class="mb-card stat-card">
+    <div class="stat-card-top">
+      <span class="stat-label">Taux d'occupation</span>
+      <span class="stat-icon">{% include "web/icons/building.svg" %}</span>
+    </div>
+    <span class="stat-value">{{ taux_occupation }}%</span>
+    <div class="mini-progress"><span style="width:{{ taux_occupation }}%;"></span></div>
+  </div>
+
+  <div class="mb-card stat-card">
+    <div class="stat-card-top">
+      <span class="stat-label">Paiements en attente</span>
+      <span class="stat-icon warn">{% include "web/icons/alert.svg" %}</span>
+    </div>
+    <span class="stat-value">{{ paiements_en_attente|floatformat:0 }} {{ devise }}</span>
+    <span class="stat-foot">{{ nb_factures_en_retard }} facture{{ nb_factures_en_retard|pluralize }} en attente</span>
+  </div>
+</div>
+
+<div class="mb-grid-2">
+  <div class="mb-card">
+    <div class="mb-section-title">
+      <span>Évolution des revenus</span>
+      <span class="mb-tabs"><button class="active" type="button">6 derniers mois</button></span>
+    </div>
+    {% if graphique.markers %}
+    <svg viewBox="0 0 {{ graphique.width }} {{ graphique.height }}" width="100%" height="230" preserveAspectRatio="none">
+      <polyline fill="none" stroke="#2db4a3" stroke-width="2.5" points="{{ graphique.points }}" />
+      <polygon fill="#2db4a3" fill-opacity="0.08" points="{{ graphique.area_points }}" />
+      {% for m in graphique.markers %}
+      <circle cx="{{ m.x }}" cy="{{ m.y }}" r="3.5" fill="#0a5c4c" />
+      {% endfor %}
+    </svg>
+    <div style="display:flex; justify-content:space-between; padding:0 32px; margin-top:-6px;">
+      {% for label in labels_mois %}<span class="mb-muted" style="font-size:11.5px;">{{ label }}</span>{% endfor %}
+    </div>
+    {% else %}
+    <div class="mb-empty">Aucune vente enregistrée pour le moment.</div>
+    {% endif %}
+  </div>
+
+  <div class="mb-card">
+    <div class="mb-section-title"><span>Activités récentes</span></div>
+    {% if activites %}
+      {% for a in activites %}
+      <div class="mb-activity-item">
+        <span class="mb-activity-icon">{% include "web/icons/invoice.svg" %}</span>
+        <div>
+          <div class="mb-activity-title">{{ a.titre }}</div>
+          <div class="mb-activity-detail">{{ a.detail }}</div>
+        </div>
+        <span class="mb-activity-time">{{ a.date|timesince }}</span>
+      </div>
+      {% endfor %}
+      <a href="{% url 'web:ventes_liste' %}" class="mb-link" style="display:inline-block; margin-top:12px;">Voir tout l'historique →</a>
+    {% else %}
+      <div class="mb-empty">Aucune activité récente.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

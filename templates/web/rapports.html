@@ -1,0 +1,116 @@
+{% extends "web/base.html" %}
+{% block contenu %}
+<div class="mb-page-header">
+  <div>
+    <h1>Rapports &amp; Analyses</h1>
+    <p>Performances globales et indicateurs de croissance pour {{ nom_entreprise }}.</p>
+  </div>
+</div>
+
+<div class="mb-grid-4">
+  <div class="mb-card stat-card">
+    <span class="stat-label">Revenu annuel</span>
+    <span class="stat-value">{{ revenu_annuel|floatformat:0 }} {{ devise }}</span>
+  </div>
+  <div class="mb-card stat-card">
+    <span class="stat-label">Marge nette</span>
+    <span class="stat-value">{{ marge_nette }}%</span>
+  </div>
+  <div class="mb-card stat-card">
+    <span class="stat-label">Dépenses annuelles</span>
+    <span class="stat-value">{{ total_depenses_annee|floatformat:0 }} {{ devise }}</span>
+  </div>
+  <div class="mb-card stat-card">
+    <span class="stat-label">Taux d'occupation</span>
+    <span class="stat-value">{{ taux_occupation }}%</span>
+  </div>
+</div>
+
+<div class="mb-grid-2">
+  <div class="mb-card">
+    <div class="mb-section-title">
+      <span>Évolution financière</span>
+      <span style="display:flex; gap:14px; font-size:12px;">
+        <span><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#0a5c4c; margin-right:5px;"></span>Revenus</span>
+        <span><span style="display:inline-block; width:8px; height:8px; border-radius:50%; background:#c7e8e2; margin-right:5px;"></span>Dépenses</span>
+      </span>
+    </div>
+    {% if graphique.points_a %}
+    <svg viewBox="0 0 {{ graphique.width }} {{ graphique.height }}" width="100%" height="230" preserveAspectRatio="none">
+      <polyline fill="none" stroke="#c7e8e2" stroke-width="2.5" points="{{ graphique.points_b }}" />
+      <polyline fill="none" stroke="#0a5c4c" stroke-width="2.5" points="{{ graphique.points_a }}" />
+    </svg>
+    <div style="display:flex; justify-content:space-between; padding:0 32px; margin-top:-6px;">
+      {% for label in labels_mois %}<span class="mb-muted" style="font-size:10.8px;">{{ label }}</span>{% endfor %}
+    </div>
+    {% else %}
+    <div class="mb-empty">Pas encore de données financières.</div>
+    {% endif %}
+  </div>
+
+  <div class="mb-card">
+    <div class="mb-section-title"><span>Locations d'espaces</span></div>
+    {% if repartition_espaces %}
+    <div style="display:flex; align-items:center; gap:24px;">
+      <svg width="140" height="140" viewBox="0 0 140 140">
+        <g transform="translate(70,70) rotate(-90)">
+          {% for seg in repartition_espaces.segments %}
+          <circle r="{{ repartition_espaces.radius }}" fill="none" stroke="{{ seg.color }}"
+                  stroke-width="{{ repartition_espaces.stroke }}"
+                  stroke-dasharray="{{ seg.dasharray }}" stroke-dashoffset="{{ seg.dashoffset }}" />
+          {% endfor %}
+        </g>
+        <text x="70" y="66" text-anchor="middle" font-size="17" font-weight="700" fill="#1e1f21">{{ revenu_annuel|floatformat:0 }}</text>
+        <text x="70" y="84" text-anchor="middle" font-size="10" fill="#6b7280">TOTAL {{ devise }}</text>
+      </svg>
+      <div style="display:flex; flex-direction:column; gap:8px; font-size:12.5px;">
+        {% for seg in repartition_espaces.segments %}
+        <div style="display:flex; align-items:center; gap:8px;">
+          <span style="width:9px; height:9px; border-radius:50%; background:{{ seg.color }}; display:inline-block;"></span>
+          {{ seg.label }} <span class="mb-muted">{{ seg.pct }}%</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="mb-empty">Pas encore de revenus locatifs cette année.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="mb-grid-2" style="margin-top:22px;">
+  <div class="mb-card">
+    <div class="mb-section-title"><span>Camps &amp; Formations</span></div>
+    <div class="mb-table-wrap">
+    <table class="mb-table">
+      <thead><tr><th>Programme</th><th>Participants</th><th class="text-right">Revenus</th></tr></thead>
+      <tbody>
+        {% for p in programmes %}
+        <tr><td class="cell-strong">{{ p.nom }}</td><td>{{ p.participants }}</td><td class="text-right mb-mono">{{ p.revenus|floatformat:0 }} {{ devise }}</td></tr>
+        {% empty %}
+        <tr><td colspan="3"><div class="mb-empty">Aucun programme enregistré.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div class="mb-card">
+    <div class="mb-section-title"><span>Top clients &amp; partenaires</span></div>
+    {% for c in top_clients %}
+    {% if c.total_factures %}
+    <div class="mb-activity-item">
+      <span class="mb-activity-icon">{% include "web/icons/users.svg" %}</span>
+      <div>
+        <div class="mb-activity-title">{{ c.nom }}</div>
+        <div class="mb-activity-detail">{{ c.get_type_client_display }}</div>
+      </div>
+      <span class="mb-activity-time cell-strong">{{ c.total_factures|floatformat:0 }} {{ devise }}</span>
+    </div>
+    {% endif %}
+    {% empty %}
+    <div class="mb-empty">Aucun client facturé pour le moment.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

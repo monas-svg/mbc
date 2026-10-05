@@ -1,0 +1,52 @@
+# ---------------------------------------------------------------------------
+# Orchestration Docker - Application de gestion MBCODE
+#
+# Deux services : une base PostgreSQL persistante et l'application Django
+# servie par Gunicorn (fichiers statiques geres par WhiteNoise).
+# ---------------------------------------------------------------------------
+name: mbcode
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-mbcode}
+      POSTGRES_USER: ${POSTGRES_USER:-mbcode}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-mbcode_password}
+    volumes:
+      - mbcode_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-mbcode} -d ${POSTGRES_DB:-mbcode}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - mbcode_network
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8001:8000"
+    volumes:
+      - mbcode_static:/app/staticfiles
+      - mbcode_media:/app/media
+    networks:
+      - mbcode_network
+
+networks:
+  mbcode_network:
+    driver: bridge
+
+volumes:
+  mbcode_postgres_data:
+  mbcode_static:
+  mbcode_media:

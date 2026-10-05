@@ -1,0 +1,77 @@
+{% extends "web/base.html" %}
+{% block contenu %}
+<div class="mb-page-header">
+  <div>
+    <h1>Location d'espaces</h1>
+    <p>Bureaux privés, salles de réunion et espaces de coworking disponibles à la location.</p>
+  </div>
+  <div class="mb-actions">
+    {% if user.est_admin %}<a href="{% url 'web:espace_creer' %}" class="btn btn-outline">Nouvel espace</a>{% endif %}
+    <a href="{% url 'web:reservation_creer' %}" class="btn btn-primary">{% include "web/icons/plus.svg" %} Nouvelle réservation</a>
+  </div>
+</div>
+
+<div class="mb-grid-3">
+  <div class="mb-card stat-card">
+    <div class="stat-card-top"><span class="stat-label">Taux d'occupation</span><span class="stat-icon">{% include "web/icons/building.svg" %}</span></div>
+    <span class="stat-value">{{ taux_occupation }}%</span>
+    <div class="mini-progress"><span style="width:{{ taux_occupation }}%;"></span></div>
+  </div>
+  <div class="mb-card stat-card">
+    <div class="stat-card-top"><span class="stat-label">Revenus locatifs (mois)</span><span class="stat-icon">{% include "web/icons/wallet.svg" %}</span></div>
+    <span class="stat-value">{{ revenus_locatifs|floatformat:0 }} {{ devise }}</span>
+  </div>
+  <div class="mb-card stat-card">
+    <div class="stat-card-top"><span class="stat-label">Espaces disponibles</span><span class="stat-icon">{% include "web/icons/grid.svg" %}</span></div>
+    <span class="stat-value">{{ espaces_disponibles }} / {{ espaces.count }}</span>
+    <span class="stat-foot">En ce moment</span>
+  </div>
+</div>
+
+<div class="mb-section-title"><span>Aperçu des espaces</span></div>
+<div class="mb-cards-grid" style="margin-bottom:26px;">
+  {% for espace in espaces %}
+  <div class="mb-item-card">
+    <div class="mb-item-thumb">{% include "web/icons/building.svg" %}</div>
+    <div class="mb-item-body">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <span class="mb-item-title" style="margin:0;">{{ espace.nom }}</span>
+        {% if espace.disponible %}<span class="badge badge-success">Libre</span>{% else %}<span class="badge badge-danger">Occupé</span>{% endif %}
+      </div>
+      <div class="mb-item-meta">{{ espace.get_type_espace_display }} · {{ espace.capacite }} pers.</div>
+      {% if espace.description %}<div class="mb-item-meta">{{ espace.description }}</div>{% endif %}
+      <div class="mb-item-foot"><span>{{ espace.equipements|default:"—" }}</span><span class="cell-strong">{{ espace.tarif_jour|floatformat:0 }} {{ devise }}/jr</span></div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="mb-empty">Aucun espace enregistré.</div>
+  {% endfor %}
+</div>
+
+<div class="mb-card">
+  <div class="mb-section-title"><span>Réservations récentes</span></div>
+  <div class="mb-table-wrap">
+  <table class="mb-table">
+    <thead><tr><th>Client</th><th>Espace</th><th>Date &amp; heure</th><th>Durée</th><th>Statut</th></tr></thead>
+    <tbody>
+      {% for r in reservations_recentes %}
+      <tr>
+        <td class="cell-strong">{{ r.client.nom }}</td>
+        <td>{{ r.espace.nom }}</td>
+        <td class="cell-muted">{{ r.date_debut|date:"d M, H:i" }}</td>
+        <td class="cell-muted">{{ r.date_fin|timeuntil:r.date_debut }}</td>
+        <td>
+          {% if r.statut == "CONFIRMEE" %}<span class="badge badge-success">Confirmée</span>
+          {% elif r.statut == "EN_COURS" %}<span class="badge badge-info">En cours</span>
+          {% elif r.statut == "ANNULEE" %}<span class="badge badge-neutral">Annulée</span>
+          {% else %}<span class="badge badge-warning">{{ r.get_statut_display }}</span>{% endif %}
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="5"><div class="mb-empty">Aucune réservation récente.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

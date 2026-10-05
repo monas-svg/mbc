@@ -1,0 +1,49 @@
+{% extends "web/base.html" %}
+{% block contenu %}
+<div class="mb-page-header">
+  <div>
+    <h1>Gestion des clients</h1>
+    <p>Retrouvez vos clients particuliers, parent-enfant et entreprises / organisations, ainsi que les enfants inscrits aux camps.</p>
+  </div>
+  <div class="mb-actions">
+    <a href="{% url 'web:client_creer' %}" class="btn btn-primary">{% include "web/icons/plus.svg" %} Nouveau client</a>
+  </div>
+</div>
+
+<div class="mb-card">
+  <div class="mb-section-title">
+    <span>{{ clients.count }} client{{ clients.count|pluralize }}</span>
+    <form method="get" style="margin:0;">
+      <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Rechercher un client…" class="champ-saisie" style="width:260px;">
+    </form>
+  </div>
+  <div class="mb-table-wrap">
+  <table class="mb-table">
+    <thead><tr><th>Client</th><th>Type</th><th>Téléphone</th><th>Email</th><th>Enfants</th><th>Depuis</th><th></th></tr></thead>
+    <tbody>
+      {% for client in clients %}
+      <tr>
+        <td><span class="mb-avatar-sm">{{ client.nom|slice:":2"|upper }}</span><span class="cell-strong">{{ client.nom }}</span></td>
+        <td>
+          {% if client.type_client == "ENTREPRISE" %}
+            <span class="tag">Entreprise / organisation</span>
+          {% elif client.type_client == "PARENT_ENFANT" %}
+            <span class="tag" style="background:var(--mb-accent-soft);">Parent-enfant</span>
+          {% else %}
+            <span class="tag" style="background:var(--mb-secondary-soft);">Particulier</span>
+          {% endif %}
+        </td>
+        <td class="cell-muted">{{ client.telephone }}</td>
+        <td class="cell-muted">{{ client.email|default:"—" }}</td>
+        <td>{{ client.enfants.count }}</td>
+        <td class="cell-muted">{{ client.date_creation|date:"d M Y" }}</td>
+        <td><a href="{% url 'web:client_detail' client.pk %}" class="mb-link">Voir</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="7"><div class="mb-empty">Aucun client enregistré pour le moment.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

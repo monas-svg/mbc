@@ -1,0 +1,43 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Connexion · {{ nom_entreprise }}</title>
+  <link rel="stylesheet" href="{% static 'css/mbcode.css' %}">
+  <link rel="icon" href="{% static 'img/logo-mark.svg' %}" type="image/svg+xml">
+</head>
+<body>
+  <div class="mb-auth-shell">
+    <div class="mb-auth-card">
+      <div class="mb-auth-logo">
+        <img src="{% static 'img/logo.jpg' %}" alt="{{ nom_entreprise }}" />
+      </div>
+      <div class="mb-auth-title">Connexion à votre espace</div>
+      <div class="mb-auth-sub">Gestion des bureaux, camps et formations</div>
+
+      {% if form.non_field_errors %}
+      <div class="mb-message error" style="margin-bottom:16px;">{{ form.non_field_errors.0 }}</div>
+      {% endif %}
+
+      <form method="post" class="mb-form" style="max-width:none;">
+        {% csrf_token %}
+        <div class="form-group">
+          <label for="{{ form.username.id_for_label }}">Identifiant</label>
+          {{ form.username }}
+          {% if form.username.errors %}<div class="form-error">{{ form.username.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="form-group">
+          <label for="{{ form.password.id_for_label }}">Mot de passe</label>
+          {{ form.password }}
+          {% if form.password.errors %}<div class="form-error">{{ form.password.errors.0 }}</div>{% endif %}
+        </div>
+        <input type="hidden" name="next" value="{{ next }}">
+        <button type="submit" class="btn btn-primary" style="justify-content:center; padding:11px;">Se connecter</button>
+      </form>
+
+      <div class="mb-auth-footer">© {% now "Y" %} {{ nom_entreprise }}. Together We Can Do More.</div>
+    </div>
+  </div>
+</body>
+</html>

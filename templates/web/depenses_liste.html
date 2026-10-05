@@ -1,0 +1,95 @@
+{% extends "web/base.html" %}
+{% block contenu %}
+<div class="mb-page-header">
+  <div>
+    <h1>Dépenses &amp; Trésorerie</h1>
+    <p>Suivi financier et gestion des charges opérationnelles.</p>
+  </div>
+  <div class="mb-actions">
+    <a href="{% url 'web:charges_fixes_liste' %}" class="btn btn-outline">Charges fixes</a>
+    <a href="{% url 'web:cloture_jour' %}" class="btn btn-outline">Clôture du jour</a>
+    <a href="{% url 'web:depense_creer' %}" class="btn btn-primary">{% include "web/icons/plus.svg" %} Enregistrer une dépense</a>
+  </div>
+</div>
+
+<div class="mb-grid-4">
+  <div class="mb-card stat-card">
+    <div class="stat-card-top"><span class="stat-label">Dépenses totales (mois)</span><span class="stat-icon warn">{% include "web/icons/wallet.svg" %}</span></div>
+    <span class="stat-value">{{ depenses_totales|floatformat:0 }} {{ devise }}</span>
+  </div>
+  <div class="mb-card stat-card">
+    <div class="stat-card-top"><span class="stat-label">Charges fixes</span><span class="stat-icon">{% include "web/icons/invoice.svg" %}</span></div>
+    <span class="stat-value">{{ total_charges_fixes|floatformat:0 }} {{ devise }}</span>
+    <span class="stat-foot">{{ charges_fixes.count }} charge{{ charges_fixes.count|pluralize }} active{{ charges_fixes.count|pluralize }}</span>
+  </div>
+  <div class="mb-card stat-card">
+    <div class="stat-card-top"><span class="stat-label">Dépenses ponctuelles</span><span class="stat-icon">{% include "web/icons/chart.svg" %}</span></div>
+    <span class="stat-value">{{ depenses_ponctuelles|floatformat:0 }} {{ devise }}</span>
+  </div>
+  <div class="mb-card mb-highlight-card stat-card">
+    <span class="stat-label">Solde de caisse</span>
+    <span class="stat-value">{{ solde_caisse|floatformat:0 }} {{ devise }}</span>
+    <span class="stat-foot">Disponible immédiatement</span>
+  </div>
+</div>
+
+<div class="mb-grid-2">
+  <div class="mb-card">
+    <div class="mb-section-title"><span>Journal des dépenses</span></div>
+    <div class="mb-table-wrap">
+    <table class="mb-table">
+      <thead><tr><th>Date</th><th>Catégorie</th><th>Libellé</th><th>Paiement</th><th class="text-right">Montant</th></tr></thead>
+      <tbody>
+        {% for d in depenses %}
+        <tr>
+          <td class="cell-muted">{{ d.date_depense|date:"d M Y" }}</td>
+          <td><span class="tag">{{ d.get_categorie_display }}</span></td>
+          <td class="cell-strong">{{ d.libelle }}</td>
+          <td class="cell-muted">{{ d.get_mode_paiement_display }}</td>
+          <td class="text-right mb-mono">{{ d.montant|floatformat:0 }} {{ devise }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5"><div class="mb-empty">Aucune dépense ce mois-ci.</div></td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:18px;">
+    <div class="mb-card">
+      <div class="mb-section-title"><span>Charges fixes</span></div>
+      {% for c in charges_fixes %}
+      <div class="mb-activity-item">
+        <span class="mb-activity-icon">{% include "web/icons/invoice.svg" %}</span>
+        <div>
+          <div class="mb-activity-title">{{ c.libelle }}</div>
+          <div class="mb-activity-detail">Prélevé le {{ c.jour_prelevement }} de chaque mois</div>
+        </div>
+        <span class="mb-activity-time cell-strong">{{ c.montant|floatformat:0 }} {{ devise }}</span>
+      </div>
+      {% empty %}
+      <div class="mb-empty">Aucune charge fixe configurée.</div>
+      {% endfor %}
+    </div>
+
+    <div class="mb-card">
+      <div class="mb-section-title"><span>Répartition par catégorie</span></div>
+      {% if repartition %}
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        {% for r in repartition %}
+        <div>
+          <div style="display:flex; justify-content:space-between; font-size:12.8px; margin-bottom:4px;">
+            <span>{{ r.categorie }}</span><span class="cell-strong">{{ r.total|floatformat:0 }} {{ devise }}</span>
+          </div>
+          <div class="mini-progress"><span style="width:{% widthratio r.total depenses_totales 100 %}%;"></span></div>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="mb-empty">Pas encore de dépense ce mois-ci.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

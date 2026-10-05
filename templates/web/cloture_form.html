@@ -1,0 +1,69 @@
+{% extends "web/base.html" %}
+{% block contenu %}
+<div class="mb-page-header">
+  <div>
+    <h1>Clôture de caisse — {{ cloture.date_jour|date:"d F Y" }}</h1>
+    <p>{% if cloture.statut == "CLOTUREE" %}Cette journée a été clôturée et n'est plus modifiable.{% else %}Vérifiez les totaux théoriques puis saisissez le montant réel en espèces avant de valider.{% endif %}</p>
+  </div>
+  <div class="mb-actions">
+    <a href="{% url 'web:depenses_liste' %}" class="btn btn-outline">Retour</a>
+  </div>
+</div>
+
+<div class="mb-grid-4">
+  <div class="mb-card stat-card">
+    <span class="stat-label">Espèces théoriques</span>
+    <span class="stat-value">{{ cloture.especes_theorique|floatformat:0 }} {{ devise }}</span>
+  </div>
+  <div class="mb-card stat-card">
+    <span class="stat-label">Orange Money</span>
+    <span class="stat-value">{{ cloture.orange_money_total|floatformat:0 }} {{ devise }}</span>
+  </div>
+  <div class="mb-card stat-card">
+    <span class="stat-label">MTN Mobile Money</span>
+    <span class="stat-value">{{ cloture.mtn_momo_total|floatformat:0 }} {{ devise }}</span>
+  </div>
+  <div class="mb-card stat-card">
+    <span class="stat-label">Dépenses du jour</span>
+    <span class="stat-value">{{ cloture.total_depenses|floatformat:0 }} {{ devise }}</span>
+  </div>
+</div>
+
+<div class="mb-card mb-highlight-card" style="margin-bottom:22px; display:flex; justify-content:space-between; align-items:center;">
+  <span class="stat-label">Solde global théorique (tous canaux)</span>
+  <span class="stat-value">{{ cloture.solde_global_theorique|floatformat:0 }} {{ devise }}</span>
+</div>
+
+{% if cloture.statut == "CLOTUREE" %}
+<div class="mb-card" style="max-width:520px;">
+  <div class="mb-section-title"><span>Résultat de la clôture</span></div>
+  <div style="display:flex; flex-direction:column; gap:10px; font-size:13.5px;">
+    <div style="display:flex; justify-content:space-between;"><span class="mb-muted">Espèces réelles comptées</span><span class="cell-strong">{{ cloture.especes_reel|floatformat:0 }} {{ devise }}</span></div>
+    <div style="display:flex; justify-content:space-between;">
+      <span class="mb-muted">Écart</span>
+      <span class="cell-strong" style="color:{% if cloture.ecart_especes == 0 %}var(--mb-success){% else %}var(--mb-danger){% endif %};">{{ cloture.ecart_especes|floatformat:0 }} {{ devise }}</span>
+    </div>
+    {% if cloture.observations %}<div class="mb-divider"></div><div class="mb-muted">{{ cloture.observations }}</div>{% endif %}
+    <div class="mb-divider"></div>
+    <div class="mb-muted">Clôturée par {{ cloture.cloturee_par.get_full_name|default:cloture.cloturee_par.username }} le {{ cloture.heure_cloture|date:"d M Y à H:i" }}</div>
+  </div>
+</div>
+{% else %}
+<div class="mb-card" style="max-width:520px;">
+  <form method="post" class="mb-form">
+    {% csrf_token %}
+    {% for field in form %}
+    <div class="form-group">
+      <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+      {{ field }}
+      {% if field.help_text %}<span class="form-hint">{{ field.help_text }}</span>{% endif %}
+      {% if field.errors %}<span class="form-error">{{ field.errors.0 }}</span>{% endif %}
+    </div>
+    {% endfor %}
+    <div class="mb-form-actions">
+      <button type="submit" class="btn btn-primary" data-confirm="Confirmer la clôture de la caisse pour aujourd'hui ? Cette action est définitive.">Valider la clôture</button>
+    </div>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

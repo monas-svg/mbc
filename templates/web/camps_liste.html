@@ -1,0 +1,86 @@
+{% extends "web/base.html" %}
+{% block contenu %}
+<div class="mb-page-header">
+  <div>
+    <h1>Camps &amp; Formations</h1>
+    <p>Gérez les sessions, les inscriptions et les formateurs.</p>
+  </div>
+  <div class="mb-actions">
+    {% if user.est_admin %}
+    <a href="{% url 'web:formation_creer' %}" class="btn btn-outline">Nouvelle formation</a>
+    <a href="{% url 'web:camp_creer' %}" class="btn btn-primary">{% include "web/icons/plus.svg" %} Nouveau camp</a>
+    {% endif %}
+    <a href="{% url 'web:inscription_camp_creer' %}" class="btn btn-outline">Inscrire un enfant</a>
+  </div>
+</div>
+
+<div class="mb-grid-2">
+  <div>
+    <div class="mb-section-title"><span>Camps de formation</span></div>
+    <div class="mb-cards-grid" style="margin-bottom:26px;">
+      {% for camp in camps %}
+      <div class="mb-item-card">
+        <div class="mb-item-thumb">
+          {% include "web/icons/cap.svg" %}
+        </div>
+        <div class="mb-item-body">
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <span class="tag">{{ camp.get_theme_display }}</span>
+          </div>
+          <div class="mb-item-title">{{ camp.titre }}</div>
+          <div class="mb-item-meta">{% include "web/icons/chart.svg" %} {{ camp.date_debut|date:"d M" }} - {{ camp.date_fin|date:"d M Y" }}</div>
+          <div class="mb-item-meta">{{ camp.inscriptions.count }} / {{ camp.capacite }} inscrits · {{ camp.montant_total_inscription|floatformat:0 }} {{ devise }}</div>
+          <div class="mini-progress"><span style="width:{{ camp.taux_remplissage }}%;"></span></div>
+          <div class="mb-item-foot"><span>{{ camp.taux_remplissage }}% capacité</span><span>{{ camp.places_restantes }} place{{ camp.places_restantes|pluralize }} restante{{ camp.places_restantes|pluralize }}</span></div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="mb-empty">Aucun camp programmé.</div>
+      {% endfor %}
+    </div>
+
+    <div class="mb-section-title"><span>Formations IA (étudiants &amp; professionnels)</span></div>
+    <div class="mb-cards-grid">
+      {% for formation in formations %}
+      <div class="mb-item-card">
+        <div class="mb-item-thumb" style="background:linear-gradient(135deg, #2db4a3, #8fd4c8);">
+          {% include "web/icons/grid.svg" %}
+        </div>
+        <div class="mb-item-body">
+          <span class="tag">{{ formation.get_niveau_display }}</span>
+          <div class="mb-item-title">{{ formation.titre }}</div>
+          <div class="mb-item-meta">{{ formation.get_public_cible_display }} · {{ formation.duree_heures }}h</div>
+          <div class="mb-item-meta">{{ formation.inscriptions.count }} / {{ formation.capacite }} inscrits · {{ formation.montant_total_inscription|floatformat:0 }} {{ devise }}</div>
+          <div class="mb-item-foot"><span>{{ formation.date_debut|date:"d M Y" }}</span><span>{{ formation.places_restantes }} place{{ formation.places_restantes|pluralize }}</span></div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="mb-empty">Aucune formation programmée.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div style="display:flex; flex-direction:column; gap:18px;">
+    <div class="mb-card mb-highlight-card stat-card">
+      <span class="stat-label">Taux remplissage global (camps)</span>
+      <span class="stat-value">{{ taux_global }}%</span>
+      <span class="stat-foot">Places confirmées sur la capacité totale des camps.</span>
+    </div>
+
+    <div class="mb-card">
+      <div class="mb-section-title"><span>Équipe de formateurs</span></div>
+      {% for f in formateurs %}
+      <div class="mb-activity-item">
+        <span class="mb-activity-icon">{% include "web/icons/users.svg" %}</span>
+        <div>
+          <div class="mb-activity-title">{{ f.nom }}</div>
+          <div class="mb-activity-detail">{{ f.specialite }}</div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="mb-empty">Aucun formateur enregistré.</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

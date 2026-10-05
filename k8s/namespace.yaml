@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mbcode
+  labels:
+    app.kubernetes.io/name: mbcode
+    app.kubernetes.io/part-of: mbcode
+    security: restricted

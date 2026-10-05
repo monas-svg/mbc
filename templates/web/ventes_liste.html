@@ -1,0 +1,72 @@
+{% extends "web/base.html" %}
+{% block contenu %}
+<div class="mb-page-header">
+  <div>
+    <h1>Ventes &amp; Facturation</h1>
+    <p>Gérez vos revenus, suivez les encaissements et enregistrez de nouvelles ventes pour vos formations et locations d'espaces.</p>
+  </div>
+  <div class="mb-actions">
+    <a href="{% url 'web:vente_creer' %}" class="btn btn-primary">{% include "web/icons/plus.svg" %} Nouvelle vente</a>
+  </div>
+</div>
+
+<div class="mb-grid-3">
+  <div class="mb-card stat-card">
+    <div class="stat-card-top">
+      <span class="stat-label">Revenus du mois</span>
+      <span class="stat-icon">{% include "web/icons/invoice.svg" %}</span>
+    </div>
+    <span class="stat-value">{{ revenus_mois|floatformat:0 }} {{ devise }}</span>
+  </div>
+  <div class="mb-card stat-card">
+    <div class="stat-card-top">
+      <span class="stat-label">Factures impayées</span>
+      <span class="stat-icon warn">{% include "web/icons/alert.svg" %}</span>
+    </div>
+    <span class="stat-value">{{ montant_impaye|floatformat:0 }} {{ devise }}</span>
+    <span class="stat-foot">Sur {{ nb_impayees }} facture{{ nb_impayees|pluralize }} en attente.</span>
+  </div>
+  <div class="mb-card mb-highlight-card stat-card">
+    <span class="stat-label">Trimestre en cours</span>
+    <span class="stat-value">{{ revenus_mois|floatformat:0 }} {{ devise }}</span>
+    <span class="stat-foot">Cumul des ventes enregistrées ce mois-ci.</span>
+  </div>
+</div>
+
+<div class="mb-card">
+  <div class="mb-section-title">
+    <span>Historique des ventes</span>
+    <form method="get" style="margin:0;">
+      <input type="search" name="q" value="{{ request.GET.q }}" placeholder="Rechercher un client ou une facture…" class="champ-saisie" style="width:260px;">
+    </form>
+  </div>
+  <div class="mb-table-wrap">
+  <table class="mb-table">
+    <thead>
+      <tr><th>Date</th><th>N° Facture</th><th>Client</th><th>Montant</th><th>Statut</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for facture in factures %}
+      <tr class="{% if facture.solde > 0 and facture.statut != 'ANNULEE' %}row-alert{% endif %}">
+        <td class="cell-muted">{{ facture.date_emission|date:"d M Y" }}</td>
+        <td class="cell-strong">{{ facture.numero }}</td>
+        <td>
+          <span class="mb-avatar-sm">{{ facture.client.nom|slice:":2"|upper }}</span>{{ facture.client.nom }}
+        </td>
+        <td class="mb-mono">{{ facture.montant_total|floatformat:0 }} {{ devise }}</td>
+        <td>
+          {% if facture.statut == "PAYEE" %}<span class="badge badge-success">Payée</span>
+          {% elif facture.statut == "PARTIELLE" %}<span class="badge badge-warning">Partielle</span>
+          {% elif facture.statut == "ANNULEE" %}<span class="badge badge-neutral">Annulée</span>
+          {% else %}<span class="badge badge-danger">En attente</span>{% endif %}
+        </td>
+        <td><a href="{% url 'web:facture_detail' facture.pk %}" class="mb-link">Voir</a></td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="6"><div class="mb-empty">Aucune vente enregistrée pour cette période.</div></td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% endblock %}

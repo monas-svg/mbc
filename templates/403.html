@@ -1,0 +1,10 @@
+{% extends "web/base.html" %}
+{% block titre %}Accès refusé{% endblock %}
+{% block contenu %}
+<div class="mb-card" style="max-width:520px; margin:60px auto; text-align:center;">
+  <div class="stat-icon warn" style="margin:0 auto 16px;">{% include "web/icons/alert.svg" %}</div>
+  <h1 style="font-size:19px; margin-bottom:8px;">Accès refusé</h1>
+  <p class="mb-muted" style="margin-bottom:20px;">{{ exception|default:"Vous n'avez pas les droits nécessaires pour effectuer cette action. Seul un administrateur peut y accéder." }}</p>
+  <a href="{% url 'web:tableau_de_bord' %}" class="btn btn-primary">Retour au tableau de bord</a>
+</div>
+{% endblock %}

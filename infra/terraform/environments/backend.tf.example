@@ -1,0 +1,22 @@
+/*
+ Example backend configuration for storing Terraform state in Azure Storage.
+ Copy this file to backend.tf and fill the placeholders or set corresponding
+ environment variables before running `terraform init`.
+
+ Replace values or use Azure-backed workspace and OIDC in CI instead of hard-coding secrets.
+*/
+
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "<RESOURCE_GROUP>"     # e.g. rg-mbcode-dev
+    storage_account_name = "<STORAGE_ACCOUNT>"    # must be globally unique
+    container_name       = "tfstate"              # container to hold the state file
+    key                  = "dev.tfstate"          # path/key for the state
+  }
+}
+
+/*
+ Notes:
+ - Create the storage account with a private network or allow trusted services.
+ - For CI use OIDC with `azure/login` and configure the backend with SAS or service principal.
+*/

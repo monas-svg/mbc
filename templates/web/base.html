@@ -1,0 +1,112 @@
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>{% block titre %}{{ titre_page|default:"Tableau de bord" }}{% endblock %} · {{ nom_entreprise }}</title>
+  <link rel="stylesheet" href="{% static 'css/mbcode.css' %}">
+  <link rel="icon" href="{% static 'img/logo-mark.svg' %}" type="image/svg+xml">
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+<div class="mb-shell">
+  <aside class="mb-sidebar" id="mb-sidebar">
+    <div class="mb-sidebar-top">
+      <div class="mb-logo">
+        <img src="{% static 'img/logo.jpg' %}" alt="{{ nom_entreprise }}" class="mb-logo-img" />
+      </div>
+      <nav class="mb-nav">
+        <a href="{% url 'web:tableau_de_bord' %}" class="{% if request.resolver_match.url_name == 'tableau_de_bord' %}active{% endif %}">
+          <span class="mb-nav-icon">{% include "web/icons/grid.svg" %}</span> Tableau de bord
+        </a>
+        <a href="{% url 'web:ventes_liste' %}" class="{% if 'ventes' in request.path or 'factures' in request.path %}active{% endif %}">
+          <span class="mb-nav-icon">{% include "web/icons/invoice.svg" %}</span> Ventes &amp; Facturation
+        </a>
+        <a href="{% url 'web:clients_liste' %}" class="{% if 'clients' in request.path %}active{% endif %}">
+          <span class="mb-nav-icon">{% include "web/icons/users.svg" %}</span> Gestion des Clients
+        </a>
+        <a href="{% url 'web:camps_liste' %}" class="{% if 'camps-formations' in request.path %}active{% endif %}">
+          <span class="mb-nav-icon">{% include "web/icons/cap.svg" %}</span> Camps &amp; Formations
+        </a>
+        <a href="{% url 'web:espaces_liste' %}" class="{% if 'espaces' in request.path %}active{% endif %}">
+          <span class="mb-nav-icon">{% include "web/icons/building.svg" %}</span> Location d'espaces
+        </a>
+        <a href="{% url 'web:depenses_liste' %}" class="{% if 'depenses' in request.path %}active{% endif %}">
+          <span class="mb-nav-icon">{% include "web/icons/wallet.svg" %}</span> Dépenses &amp; Trésorerie
+        </a>
+        <a href="{% url 'web:rapports' %}" class="{% if 'rapports' in request.path %}active{% endif %}">
+          <span class="mb-nav-icon">{% include "web/icons/chart.svg" %}</span> Rapports
+        </a>
+      </nav>
+    </div>
+    <div class="mb-sidebar-bottom">
+      {% if user.is_authenticated %}
+      <div class="mb-role-pill">
+        <strong>{{ user.get_full_name|default:user.username }}</strong>
+        {{ user.get_role_display }}
+      </div>
+      <nav class="mb-nav">
+        {% if user.est_admin %}
+        <a href="{% url 'admin:index' %}"><span class="mb-nav-icon">{% include "web/icons/settings.svg" %}</span> Paramètres</a>
+        {% endif %}
+        <form method="post" action="{% url 'web:deconnexion' %}">
+          {% csrf_token %}
+          <button type="submit" class="mb-nav-link-btn" style="all:unset; cursor:pointer; display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:8px; color:var(--mb-text-muted); font-size:14px; font-weight:500; width:100%;">
+            <span class="mb-nav-icon">{% include "web/icons/logout.svg" %}</span> Déconnexion
+          </button>
+        </form>
+      </nav>
+      {% endif %}
+    </div>
+  </aside>
+
+  <div class="mb-main">
+    <header class="mb-topbar">
+      <button class="mb-toggle-sidebar btn btn-outline btn-sm" onclick="document.getElementById('mb-sidebar').classList.toggle('open')">☰</button>
+      <div class="mb-search">
+        {% include "web/icons/search.svg" %}
+        <input type="search" placeholder="Rechercher…" disabled>
+      </div>
+      <div class="mb-topbar-right">
+        <span class="mb-bell">{% include "web/icons/bell.svg" %}<span class="dot"></span></span>
+        {% if user.is_authenticated %}
+        <div class="mb-user">
+          <span class="mb-user-avatar">{{ user.get_full_name|default:user.username|slice:":2"|upper }}</span>
+          <span class="mb-user-meta">
+            <span class="mb-user-name" style="display:block;">{{ user.get_full_name|default:user.username }}</span>
+            <span class="mb-user-role">{{ user.get_role_display }}</span>
+          </span>
+        </div>
+        {% endif %}
+      </div>
+    </header>
+
+    <main class="mb-content">
+      {% if messages %}
+      <div class="mb-messages">
+        {% for message in messages %}
+        <div class="mb-message {{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% block contenu %}{% endblock %}
+
+      <footer class="mb-footer">
+        <div>
+          <strong>{{ nom_entreprise }}</strong><br>
+          Quartier Makepe, Douala, Cameroun<br>
+          +237 6 59 17 27 62 · infos@mbcode.cm
+        </div>
+        <div class="mb-footer-copy" style="width:auto; border:none; margin:0; padding:0; text-align:left;">
+          © {% now "Y" %} {{ nom_entreprise }}. Together We Can Do More.
+        </div>
+      </footer>
+    </main>
+  </div>
+</div>
+<script src="{% static 'js/mbcode.js' %}"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>
